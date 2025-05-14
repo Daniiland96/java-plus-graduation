@@ -4,7 +4,6 @@ import ewm.ParamDto;
 import ewm.ParamHitDto;
 import ewm.ViewStats;
 import ewm.exception.InvalidRequestException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,11 +14,10 @@ import java.util.List;
 
 @Component
 public class RestStatClient implements StatClient {
-    private final String statUrl;
+    private final String statUrl = "http://localhost:9090";
     private final RestClient restClient;
 
-    public RestStatClient(@Value("${client.url}") String statUrl) {
-        this.statUrl = statUrl;
+    public RestStatClient() {
         this.restClient = RestClient.builder()
                 .baseUrl(statUrl)
                 .build();

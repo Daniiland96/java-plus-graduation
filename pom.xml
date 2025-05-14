@@ -21,10 +21,11 @@
 		<java.version>21</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<lombok.version>1.18.32</lombok.version>
+		<spring-cloud-dependencies.version>2023.0.3</spring-cloud-dependencies.version>
 	</properties>
 
 	<modules>
-		<module>stat</module>
+		<module>stats</module>
 		<module>infra</module>
 		<module>core</module>
 	</modules>
@@ -36,6 +37,13 @@
 				<artifactId>lombok</artifactId>
 				<scope>provided</scope>
 				<version>${lombok.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud-dependencies.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
