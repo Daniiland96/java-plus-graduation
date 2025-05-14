@@ -25,7 +25,8 @@
 
 	<modules>
 		<module>stat</module>
-		<module>main-service</module>
+		<module>infra</module>
+		<module>core</module>
 	</modules>
 
 	<dependencyManagement>
