@@ -9,6 +9,7 @@ import ewm.event.model.EventSort;
 import ewm.event.service.EventService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,8 @@ import static ewm.utility.Constants.FORMAT_DATETIME;
 @RequiredArgsConstructor
 public class PublicEventController {
 
-    private static final String MAIN_SERVICE = "ewm-main-service";
+    @Value("${main.service.app.name}")
+    private String mainServiceAppName;
     private final EventService eventService;
     private final RestStatClient statClient;
 
@@ -63,7 +65,7 @@ public class PublicEventController {
 
     private void hit(HttpServletRequest request) {
         ParamHitDto endpointHitDto = new ParamHitDto();
-        endpointHitDto.setApp(MAIN_SERVICE);
+        endpointHitDto.setApp(mainServiceAppName);
         endpointHitDto.setUri(request.getRequestURI());
         endpointHitDto.setIp(request.getRemoteAddr());
         endpointHitDto.setTimestamp(LocalDateTime.now());

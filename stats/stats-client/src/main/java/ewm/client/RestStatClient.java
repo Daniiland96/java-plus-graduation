@@ -4,6 +4,11 @@ import ewm.ParamDto;
 import ewm.ParamHitDto;
 import ewm.ViewStats;
 import ewm.exception.InvalidRequestException;
+import ewm.exception.StatsServerUnavailable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,14 +18,16 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 
 @Component
+@Slf4j
 public class RestStatClient implements StatClient {
-    private final String statUrl = "http://localhost:9090";
+    private final DiscoveryClient discoveryClient;
     private final RestClient restClient;
+    private final String statUrl;
 
-    public RestStatClient() {
-        this.restClient = RestClient.builder()
-                .baseUrl(statUrl)
-                .build();
+    public RestStatClient(DiscoveryClient discoveryClient, @Value("${stat.client.url}") String statUrl) {
+        this.discoveryClient = discoveryClient;
+        this.statUrl = statUrl;
+        this.restClient = RestClient.create(getInstance().getUri().toString());
     }
 
     @Override
@@ -48,5 +55,19 @@ public class RestStatClient implements StatClient {
                     throw new InvalidRequestException(response.getStatusCode().value() + ": " + response.getBody());
                 })
                 .body(ParameterizedTypeReference.forType(List.class));
+    }
+
+    private ServiceInstance getInstance() {
+        try {
+            ServiceInstance serviceInstance = discoveryClient
+                    .getInstances(statUrl)
+                    .getFirst();
+            log.info("Получаем {} uri: {}", statUrl, serviceInstance.getUri().toString());
+            return serviceInstance;
+        } catch (Exception exception) {
+            throw new StatsServerUnavailable(
+                    "Ошибка обнаружения адреса сервиса статистики с id: " + statUrl
+            );
+        }
     }
 }

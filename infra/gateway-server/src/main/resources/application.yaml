@@ -1,19 +1,16 @@
 spring:
   application:
-    name: config-server
-  profiles:
-    active: native
+    name: gateway-server
+  config:
+    import: "configserver:"
   cloud:
     config:
-      server:
-        native:
-          searchLocations:
-            - classpath:config/infra/{application}
-            - classpath:config/core/{application}
-            - classpath:config/stats/{application}
-
-server:
-  port: 0
+      fail-fast: true
+      retry:
+        useRandomPolicy: true
+      discovery:
+        enabled: true
+        serviceId: config-server
 
 eureka:
   client:
