@@ -5,6 +5,7 @@ import ewm.ParamHitDto;
 import ewm.ViewStats;
 import ewm.exception.InvalidRequestException;
 import ewm.exception.StatsServerUnavailable;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
@@ -19,20 +20,16 @@ import java.util.List;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class RestStatClient implements StatClient {
     private final DiscoveryClient discoveryClient;
-    private final RestClient restClient;
-    private final String statUrl;
-
-    public RestStatClient(DiscoveryClient discoveryClient, @Value("${stat.client.url}") String statUrl) {
-        this.discoveryClient = discoveryClient;
-        this.statUrl = statUrl;
-        this.restClient = RestClient.create(getInstance().getUri().toString());
-    }
+    private RestClient restClient;
+    @Value("${stat.client.url}")
+    private String statUrl;
 
     @Override
     public void hit(ParamHitDto paramHitDto) {
-        restClient.post()
+        getRestClient().post()
                 .uri("/hit")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(paramHitDto)
@@ -44,7 +41,7 @@ public class RestStatClient implements StatClient {
 
     @Override
     public List<ViewStats> getStat(ParamDto paramDto) {
-        return restClient.get().uri(uriBuilder -> uriBuilder.path("/stats")
+        return getRestClient().get().uri(uriBuilder -> uriBuilder.path("/stats")
                         .queryParam("start", paramDto.getStart().toString())
                         .queryParam("end", paramDto.getEnd().toString())
                         .queryParam("uris", paramDto.getUris())
@@ -69,5 +66,13 @@ public class RestStatClient implements StatClient {
                     "Ошибка обнаружения адреса сервиса статистики с id: " + statUrl
             );
         }
+    }
+
+    private RestClient getRestClient() {
+        ServiceInstance instance = getInstance();
+        if (restClient == null) {
+            this.restClient = RestClient.create(instance.getUri().toString());
+        }
+        return this.restClient;
     }
 }
