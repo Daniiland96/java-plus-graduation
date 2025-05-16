@@ -2,32 +2,30 @@ server:
   port: 8080
 
 spring:
+  output:
+    ansi:
+      enabled: always
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
+      discovery.locator.enabled: true
       routes:
         - id: main-service
           uri: lb://main-service
           predicates:
-            - Path=/categories/**
-            - Path=/compilations/**
-            - Path=/admin/**
-            - Path=/events/**
-            - Path=/users/**
-            - Path=/comments/**
-          filters:
-            - StripPrefix=1
-
+            - Path=/categories/**, /admin/**, /users/**, /events/**, /compilations/**
         - id: stats-server
           uri: lb://stats-server
           predicates:
-            - Path=/hit/**
-            - Path=/stats/**
-          filters:
-            - StripPrefix=1
+            - Path=/hit/**, /stats/**
+
+management:
+  endpoint:
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: gateway
 
 logging:
   level:

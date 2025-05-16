@@ -1,3 +1,6 @@
+server:
+  port: 0
+
 spring:
   output:
     ansi:
@@ -30,6 +33,3 @@ logging:
       hibernate:
         sql: DEBUG
         orm.jdbc.bind: TRACE
-
-server:
-  port: 0
