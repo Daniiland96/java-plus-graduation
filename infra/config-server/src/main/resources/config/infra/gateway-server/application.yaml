@@ -7,7 +7,7 @@ spring:
       discovery:
         locator:
           enabled: true
-          lower-case-service-id: true  # Добавьте это
+          lower-case-service-id: true
       routes:
         - id: main-service
           uri: lb://main-service
@@ -19,7 +19,7 @@ spring:
             - Path=/users/**
             - Path=/comments/**
           filters:
-            - StripPrefix=1  # Важно!
+            - StripPrefix=1
 
         - id: stats-server
           uri: lb://stats-server
