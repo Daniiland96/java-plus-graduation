@@ -1,14 +1,18 @@
-package ewm.category.service;
+package ewm.service;
 
-import ewm.category.dto.CategoryDto;
-import ewm.category.dto.NewCategoryDto;
+import ewm.dto.CategoryDto;
+import ewm.dto.NewCategoryDto;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface CategoryService {
     List<CategoryDto> getAll(Integer from, Integer size);
 
     CategoryDto getCategoryById(Long id);
+
+    Map<Long, CategoryDto> getCategoryById(Set<Long> categoriesId);
 
     CategoryDto createCategory(NewCategoryDto newCategoryDto);
 

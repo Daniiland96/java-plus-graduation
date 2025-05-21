@@ -9,6 +9,7 @@ import ewm.event.model.EventSort;
 import ewm.event.service.EventService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static ewm.utility.Constants.FORMAT_DATETIME;
 
+@Slf4j
 @RestController
 @RequestMapping("/events")
 @RequiredArgsConstructor
@@ -50,6 +52,7 @@ public class PublicEventController {
                 .from(from)
                 .size(size)
                 .build();
+        log.info("Публичный запрос на поиск событий по параметрам: {}", reqParam);
         List<EventShortDto> events = eventService.getAllEvents(reqParam);
         hit(request);
         return events;

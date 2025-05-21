@@ -1,6 +1,5 @@
 package ewm.event.model;
 
-import ewm.category.model.Category;
 import ewm.user.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,9 +20,8 @@ public class Event {
     private Long id;
     private String annotation;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @Column(name = "category_id")
+    private Long categoryId;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn; // дата создания события

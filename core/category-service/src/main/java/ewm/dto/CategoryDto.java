@@ -1,4 +1,4 @@
-package ewm.category.dto;
+package ewm.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
@@ -14,5 +14,4 @@ public class CategoryDto {
     @NotBlank(message = "Название категории не может быть пустым")
     @Size(min = 1, max = 50)
     private String name;
-
 }

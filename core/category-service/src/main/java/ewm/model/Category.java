@@ -1,4 +1,4 @@
-package ewm.category.model;
+package ewm.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;

@@ -7,12 +7,14 @@ import ewm.event.dto.UpdateEventUserRequest;
 import ewm.event.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @Validated
@@ -24,6 +26,7 @@ public class PrivateEventController {
     @PostMapping
     public EventFullDto create(@PathVariable(name = "userId") Long userId,
                                @Valid @RequestBody NewEventDto newEventDto) {
+        log.info("Запрос на создание нового события: {}, {}", userId, newEventDto);
         return service.create(userId, newEventDto);
     }
 

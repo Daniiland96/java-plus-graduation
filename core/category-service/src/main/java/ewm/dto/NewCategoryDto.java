@@ -1,4 +1,4 @@
-package ewm.category.dto;
+package ewm.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

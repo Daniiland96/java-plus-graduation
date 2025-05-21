@@ -1,11 +1,11 @@
 package ewm.event.service;
 
 import ewm.ParamDto;
-import ewm.category.model.Category;
-import ewm.category.repository.CategoryRepository;
 import ewm.client.RestStatClient;
 import ewm.comment.repository.CommentRepository;
 import ewm.event.dto.*;
+import ewm.event.feign.category.CategoryDto;
+import ewm.event.feign.category.CategoryFeign;
 import ewm.event.mapper.EventMapper;
 import ewm.event.model.*;
 import ewm.event.repository.EventRepository;
@@ -20,6 +20,7 @@ import ewm.requests.repository.RequestRepository;
 import ewm.user.model.User;
 import ewm.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static ewm.utility.Constants.FORMAT_DATETIME;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
@@ -38,7 +40,7 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final RestStatClient statClient;
     private final UserRepository userRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryFeign categoryFeign;
     private final LocationRepository locationRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
@@ -51,7 +53,8 @@ public class EventServiceImpl implements EventService {
             reqParam.setRangeStart(LocalDateTime.now());
             reqParam.setRangeEnd(LocalDateTime.now().plusYears(1));
         }
-        List<EventFullDto> eventFullDtos = eventMapper.toEventFullDtos(eventRepository.findEvents(
+
+        List<Event> events = eventRepository.findEvents(
                 reqParam.getText(),
                 reqParam.getCategories(),
                 reqParam.getPaid(),
@@ -59,10 +62,13 @@ public class EventServiceImpl implements EventService {
                 reqParam.getRangeEnd(),
                 reqParam.getOnlyAvailable(),
                 pageable
-        ));
-        if (eventFullDtos.isEmpty()) {
+        );
+        log.info("Найденные события: {}", events);
+        if (events.isEmpty()) {
             throw new ValidationException(ReqParam.class, " События не найдены");
         }
+
+        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
         List<Long> eventsIds = eventFullDtos.stream().map(EventFullDto::getId).toList();
         List<EventCommentCount> eventCommentCountList = commentRepository.findAllByEventIds(eventsIds);
 
@@ -129,8 +135,8 @@ public class EventServiceImpl implements EventService {
         }
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
-        Category category = categoryRepository.findById(newEventDto.getCategory())
-                .orElseThrow(() -> new EntityNotFoundException(Category.class, "Категория не найден"));
+        CategoryDto category = categoryFeign.getCategoryById(newEventDto.getCategory());
+        log.info("Получаем категорию из category-service: {}", category);
 
         Event event = eventMapper.toEvent(newEventDto);
         if (newEventDto.getPaid() == null) {
@@ -143,11 +149,15 @@ public class EventServiceImpl implements EventService {
             event.setParticipantLimit(0L);
         }
         event.setInitiator(initiator);
-        event.setCategory(category);
         event.setCreatedOn(LocalDateTime.now());
         event.setState(EventState.PENDING);
         event.setLocation(locationRepository.save(event.getLocation()));
-        return eventMapper.toEventFullDto(eventRepository.save(event));
+
+        event = eventRepository.save(event);
+        log.info("Сохраняем новое событиев БД: {}", event);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, category);
+        log.info("Результат маппинга: {}", eventFullDto);
+        return eventFullDto;
     }
 
     @Override
@@ -270,9 +280,8 @@ public class EventServiceImpl implements EventService {
             event.setAnnotation(updateRequest.getAnnotation());
         }
         if (updateRequest.getCategory() != null) {
-            Category category = categoryRepository.findById(updateRequest.getCategory())
-                    .orElseThrow(() -> new EntityNotFoundException(Category.class, "Категория не найдена"));
-            event.setCategory(category);
+            CategoryDto category = categoryFeign.getCategoryById(updateRequest.getCategory());
+            event.setCategoryId(category.getId());
         }
         if (updateRequest.getDescription() != null && !updateRequest.getDescription().isBlank()) {
             event.setDescription(updateRequest.getDescription());
@@ -316,5 +325,19 @@ public class EventServiceImpl implements EventService {
                 requestRepository.countByEventIdAndStatus(eventDto.getId(), RequestStatus.CONFIRMED)
         );
         return eventDto;
+    }
+
+    private List<EventFullDto> addCategoriesDto(List<Event> events) {
+        Set<Long> categoriesId = events.stream().map(Event::getCategoryId).collect(Collectors.toSet());
+        Map<Long, CategoryDto> categories = categoryFeign.getCategoryById(categoriesId);
+        log.info("Получаем категории из category-service: {}", categories);
+
+        List<EventFullDto> result = new ArrayList<>();
+        for (Event event : events) {
+            EventFullDto dto = eventMapper.toEventFullDto(event);
+            dto.setCategory(categories.get(event.getCategoryId()));
+            result.add(dto);
+        }
+        return result;
     }
 }
