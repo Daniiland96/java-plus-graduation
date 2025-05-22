@@ -6,6 +6,7 @@ import ewm.event.dto.UpdateEventAdminRequest;
 import ewm.event.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 
 import static ewm.utility.Constants.FORMAT_DATETIME;
 
+@Slf4j
 @RestController
 @RequestMapping(path = "/admin/events")
 @RequiredArgsConstructor
@@ -35,6 +37,15 @@ public class AdminEventController {
 
         AdminEventParams adminEventParams = new AdminEventParams(users, states, categories, rangeStart, rangeEnd, from, size);
         return eventService.getAllEvents(adminEventParams);
+    }
+
+    @GetMapping("/check/category")
+    public List<EventFullDto> adminGetAllEventsByCategory(
+            @RequestParam Long categoryId,
+            @RequestParam(defaultValue = "0") int from,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Административный запрос на поиск событий по категории: {}", categoryId);
+        return eventService.findAllByCategoryId(categoryId, from, size);
     }
 
     @PatchMapping("/{eventId}")

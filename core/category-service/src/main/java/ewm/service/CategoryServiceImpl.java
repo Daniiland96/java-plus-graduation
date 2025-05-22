@@ -3,11 +3,15 @@ package ewm.service;
 import ewm.dto.CategoryDto;
 import ewm.dto.NewCategoryDto;
 import ewm.exception.CategoryNotFoundException;
+import ewm.feign.event.EventFeign;
+import ewm.feign.event.EventFullDto;
 import ewm.mapper.CategoryMapper;
 import ewm.model.Category;
 import ewm.repository.CategoryRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,10 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final EventFeign eventFeign;
+
+    private static final Integer FROM = 0;
+    private static final Integer SIZE = 3;
 
     public List<CategoryDto> getAll(Integer from, Integer size) {
         Pageable pageable = PageRequest.of(from, size);
@@ -80,6 +88,16 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     public void deleteCategory(Long id) {
+        List<EventFullDto> eventFullDtos;
+        try {
+            eventFullDtos = eventFeign.adminGetAllEventsByCategory(id, FROM, SIZE);
+            log.info("События из event-service: {}", eventFullDtos);
+        } catch (FeignException e) {
+            throw new DataIntegrityViolationException("Возможно есть зависимые события в event-service. " + e.getMessage());
+        }
+        if(!eventFullDtos.isEmpty()) {
+            throw new DataIntegrityViolationException("Есть зависимые события в event-service: " + eventFullDtos);
+        }
         categoryRepository.deleteById(id);
     }
 

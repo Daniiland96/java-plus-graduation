@@ -19,6 +19,7 @@ import ewm.requests.model.RequestStatus;
 import ewm.requests.repository.RequestRepository;
 import ewm.user.model.User;
 import ewm.user.repository.UserRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -103,14 +104,16 @@ public class EventServiceImpl implements EventService {
             params.setRangeEnd(LocalDateTime.now().plusYears(1));
         }
 
-        List<EventFullDto> eventFullDtos = eventMapper.toEventFullDtos(eventRepository.findAdminEvents(
+        List<Event> events = eventRepository.findAdminEvents(
                 params.getUsers(),
                 params.getStates(),
                 params.getCategories(),
                 params.getRangeStart(),
                 params.getRangeEnd(),
-                pageable));
+                pageable);
+        log.info("Найденные события: {}", events);
 
+        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
         return addRequests(addViews(eventFullDtos));
     }
 
@@ -121,7 +124,10 @@ public class EventServiceImpl implements EventService {
         if (event.getState() != EventState.PUBLISHED) {
             throw new EntityNotFoundException(Event.class, " Событие c ID - " + id + ", ещё не опубликовано.");
         }
-        EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
+
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, category);
         eventFullDto.setCommentsCount(commentRepository.countCommentByEvent_Id(event.getId()));
         return addRequests(addViews(eventFullDto));
     }
@@ -135,9 +141,8 @@ public class EventServiceImpl implements EventService {
         }
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
-        CategoryDto category = categoryFeign.getCategoryById(newEventDto.getCategory());
-        log.info("Получаем категорию из category-service: {}", category);
 
+        CategoryDto category = getCategoryDto(newEventDto.getCategory());
         Event event = eventMapper.toEvent(newEventDto);
         if (newEventDto.getPaid() == null) {
             event.setPaid(false);
@@ -187,7 +192,9 @@ public class EventServiceImpl implements EventService {
         }
 
         checkEvent(event, updateEventAdminRequest);
-        return eventMapper.toEventFullDto(eventRepository.save(event));
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+        event = eventRepository.save(event);
+        return eventMapper.toEventFullDto(event, category);
 
     }
 
@@ -197,7 +204,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
         Pageable pageable = PageRequest.of(from, size);
         List<Event> events = eventRepository.findAllByInitiatorId(userId, pageable);
-        List<EventFullDto> eventFullDtos = eventMapper.toEventFullDtos(events);
+        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
         return eventMapper.toEventShortDtos(addRequests(addViews(eventFullDtos)));
     }
 
@@ -207,7 +214,8 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие не найдено"));
-        EventFullDto result = eventMapper.toEventFullDto(event);
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+        EventFullDto result = eventMapper.toEventFullDto(event, category);
         return addRequests(addViews(result));
     }
 
@@ -236,7 +244,19 @@ public class EventServiceImpl implements EventService {
         }
 
         checkEvent(event, updateRequest);
-        return eventMapper.toEventFullDto(eventRepository.save(event));
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+
+        event = eventRepository.save(event);
+        return eventMapper.toEventFullDto(event, category);
+    }
+
+    @Override
+    public List<EventFullDto> findAllByCategoryId(Long categoryId, Integer from, Integer size) {
+        Pageable pageable = PageRequest.of(from, size);
+
+        List<Event> events = eventRepository.findAllByCategoryId(categoryId, pageable);
+        log.info("По категории с id: {}, найдены события: {}", categoryId, events);
+        return eventMapper.toEventFullDtos(events);
     }
 
     private List<EventFullDto> addViews(List<EventFullDto> eventDtos) {
@@ -280,8 +300,7 @@ public class EventServiceImpl implements EventService {
             event.setAnnotation(updateRequest.getAnnotation());
         }
         if (updateRequest.getCategory() != null) {
-            CategoryDto category = categoryFeign.getCategoryById(updateRequest.getCategory());
-            event.setCategoryId(category.getId());
+            event.setCategoryId(updateRequest.getCategory());
         }
         if (updateRequest.getDescription() != null && !updateRequest.getDescription().isBlank()) {
             event.setDescription(updateRequest.getDescription());
@@ -327,11 +346,25 @@ public class EventServiceImpl implements EventService {
         return eventDto;
     }
 
+    private CategoryDto getCategoryDto(Long categoryId) {
+        try {
+            CategoryDto category = categoryFeign.getCategoryById(categoryId);
+            log.info("Получаем категорию из category-service: {}", category);
+            return category;
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(CategoryDto.class, e.getMessage());
+        }
+    }
+
     private List<EventFullDto> addCategoriesDto(List<Event> events) {
         Set<Long> categoriesId = events.stream().map(Event::getCategoryId).collect(Collectors.toSet());
-        Map<Long, CategoryDto> categories = categoryFeign.getCategoryById(categoriesId);
-        log.info("Получаем категории из category-service: {}", categories);
-
+        Map<Long, CategoryDto> categories;
+        try {
+            categories = categoryFeign.getCategoryById(categoriesId);
+            log.info("Получаем категории из category-service: {}", categories);
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(CategoryDto.class, e.getMessage());
+        }
         List<EventFullDto> result = new ArrayList<>();
         for (Event event : events) {
             EventFullDto dto = eventMapper.toEventFullDto(event);
