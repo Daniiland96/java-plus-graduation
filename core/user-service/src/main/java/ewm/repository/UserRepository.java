@@ -1,6 +1,6 @@
-package ewm.user.repository;
+package ewm.repository;
 
-import ewm.user.model.User;
+import ewm.model.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 

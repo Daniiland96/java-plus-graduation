@@ -2,7 +2,7 @@ package ewm.comment.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import ewm.user.dto.UserShortDto;
+import ewm.feign.user.UserShortDto;
 import lombok.Getter;
 import lombok.Setter;
 

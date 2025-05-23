@@ -1,4 +1,4 @@
-package ewm.event.feign.category;
+package ewm.feign.category;
 
 import ewm.exception.EntityNotFoundException;
 import org.springframework.stereotype.Component;

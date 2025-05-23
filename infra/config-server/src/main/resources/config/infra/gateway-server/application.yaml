@@ -12,13 +12,7 @@ spring:
         - id: main-service
           uri: lb://main-service
           predicates:
-            - Path=/admin/events/**, /admin/users/**, /admin/compilations/**, /users/**, /events/**, /compilations/**
-#            - Path=/admin/events/**
-#            - Path=/admin/users/**
-#            - Path=/admin/compilations/**
-#            - Path=/users/**
-#            - Path=/events/**
-#            - Path=/compilations/**
+            - Path=/admin/events/**, /admin/compilations/**, /users/**, /events/**, /compilations/**
 
         - id: stats-server
           uri: lb://stats-server
@@ -29,6 +23,11 @@ spring:
           uri: lb://category-service
           predicates:
             - Path=/categories/**, /admin/categories/**
+
+        - id: user-service
+          uri: lb://category-service
+          predicates:
+            - Path=/admin/users/**
 
 management:
   endpoint:

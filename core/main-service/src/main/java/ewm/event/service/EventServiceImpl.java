@@ -4,8 +4,8 @@ import ewm.ParamDto;
 import ewm.client.RestStatClient;
 import ewm.comment.repository.CommentRepository;
 import ewm.event.dto.*;
-import ewm.event.feign.category.CategoryDto;
-import ewm.event.feign.category.CategoryFeign;
+import ewm.feign.category.CategoryDto;
+import ewm.feign.category.CategoryFeign;
 import ewm.event.mapper.EventMapper;
 import ewm.event.model.*;
 import ewm.event.repository.EventRepository;
@@ -14,6 +14,8 @@ import ewm.exception.ConditionNotMetException;
 import ewm.exception.EntityNotFoundException;
 import ewm.exception.InitiatorRequestException;
 import ewm.exception.ValidationException;
+import ewm.feign.user.UserFeign;
+import ewm.feign.user.UserShortDto;
 import ewm.requests.model.Request;
 import ewm.requests.model.RequestStatus;
 import ewm.requests.repository.RequestRepository;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static ewm.utility.Constants.FORMAT_DATETIME;
@@ -40,7 +43,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
     private final RestStatClient statClient;
-    private final UserRepository userRepository;
+    private final UserFeign userFeign;
     private final CategoryFeign categoryFeign;
     private final LocationRepository locationRepository;
     private final RequestRepository requestRepository;
@@ -69,7 +72,9 @@ public class EventServiceImpl implements EventService {
             throw new ValidationException(ReqParam.class, " События не найдены");
         }
 
-        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
+        List<EventFullDto> eventFullDtos = addCategoriesDto(eventMapper.toEventFullDtos(events), events);
+        addUserShortDto(eventFullDtos, events);
+
         List<Long> eventsIds = eventFullDtos.stream().map(EventFullDto::getId).toList();
         List<EventCommentCount> eventCommentCountList = commentRepository.findAllByEventIds(eventsIds);
 
@@ -113,7 +118,8 @@ public class EventServiceImpl implements EventService {
                 pageable);
         log.info("Найденные события: {}", events);
 
-        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
+        List<EventFullDto> eventFullDtos = addCategoriesDto(eventMapper.toEventFullDtos(events), events);
+        addUserShortDto(eventFullDtos, events);
         return addRequests(addViews(eventFullDtos));
     }
 
@@ -126,8 +132,9 @@ public class EventServiceImpl implements EventService {
         }
 
         CategoryDto category = getCategoryDto(event.getCategoryId());
+        UserShortDto userShortDto = getUserShortDto(event.getInitiatorId());
 
-        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, category);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, userShortDto, category);
         eventFullDto.setCommentsCount(commentRepository.countCommentByEvent_Id(event.getId()));
         return addRequests(addViews(eventFullDto));
     }
@@ -139,10 +146,10 @@ public class EventServiceImpl implements EventService {
         if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ValidationException(NewEventDto.class, "До начала события осталось меньше двух часов");
         }
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
 
+        UserShortDto initiator = getUserShortDto(userId);
         CategoryDto category = getCategoryDto(newEventDto.getCategory());
+
         Event event = eventMapper.toEvent(newEventDto);
         if (newEventDto.getPaid() == null) {
             event.setPaid(false);
@@ -153,14 +160,14 @@ public class EventServiceImpl implements EventService {
         if (newEventDto.getParticipantLimit() == null) {
             event.setParticipantLimit(0L);
         }
-        event.setInitiator(initiator);
+        event.setInitiatorId(initiator.getId());
         event.setCreatedOn(LocalDateTime.now());
         event.setState(EventState.PENDING);
         event.setLocation(locationRepository.save(event.getLocation()));
 
         event = eventRepository.save(event);
         log.info("Сохраняем новое событиев БД: {}", event);
-        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, category);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, initiator, category);
         log.info("Результат маппинга: {}", eventFullDto);
         return eventFullDto;
     }
@@ -192,10 +199,11 @@ public class EventServiceImpl implements EventService {
         }
 
         checkEvent(event, updateEventAdminRequest);
-        CategoryDto category = getCategoryDto(event.getCategoryId());
-        event = eventRepository.save(event);
-        return eventMapper.toEventFullDto(event, category);
 
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+        UserShortDto initiator = getUserShortDto(event.getInitiatorId());
+        event = eventRepository.save(event);
+        return eventMapper.toEventFullDto(event, initiator, category);
     }
 
     @Override
@@ -356,7 +364,9 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private List<EventFullDto> addCategoriesDto(List<Event> events) {
+    private List<EventFullDto> addCategoriesDto(List<EventFullDto> dtos, List<Event> events) {
+        Map<Long, EventFullDto> dtoMap = dtos.stream().collect(Collectors.toMap(EventFullDto::getId, Function.identity()));
+
         Set<Long> categoriesId = events.stream().map(Event::getCategoryId).collect(Collectors.toSet());
         Map<Long, CategoryDto> categories;
         try {
@@ -365,12 +375,38 @@ public class EventServiceImpl implements EventService {
         } catch (FeignException e) {
             throw new EntityNotFoundException(CategoryDto.class, e.getMessage());
         }
-        List<EventFullDto> result = new ArrayList<>();
         for (Event event : events) {
-            EventFullDto dto = eventMapper.toEventFullDto(event);
-            dto.setCategory(categories.get(event.getCategoryId()));
-            result.add(dto);
+            dtoMap.get(event.getId()).setCategory(categories.get(event.getCategoryId()));
         }
-        return result;
+        log.info("Добавляем категории: {}", dtos);
+        return dtos;
+    }
+
+    private UserShortDto getUserShortDto(Long userId) {
+        try {
+            UserShortDto user = userFeign.findUserShortDtoById(userId);
+            log.info("Получаем пользователя из user-service: {}", user);
+            return user;
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(UserShortDto.class, e.getMessage());
+        }
+    }
+
+    private List<EventFullDto> addUserShortDto(List<EventFullDto> dtos, List<Event> events) {
+        Map<Long, EventFullDto> dtoMap = dtos.stream().collect(Collectors.toMap(EventFullDto::getId, Function.identity()));
+
+        Set<Long> usersId = events.stream().map(Event::getInitiatorId).collect(Collectors.toSet());
+        Map<Long, UserShortDto> users;
+        try {
+            users = userFeign.findUserShortDtoById(usersId);
+            log.info("Получаем пользователей из user-service: {}", users);
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(UserShortDto.class, e.getMessage());
+        }
+        for (Event event : events) {
+            dtoMap.get(event.getId()).setInitiator(users.get(event.getInitiatorId()));
+        }
+        log.info("Добавляем пользователей: {}", dtos);
+        return dtos;
     }
 }

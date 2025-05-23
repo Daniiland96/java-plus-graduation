@@ -1,15 +1,20 @@
-package ewm.user.controller;
+package ewm.controller;
 
-import ewm.user.dto.UserDto;
-import ewm.user.service.UserService;
+import ewm.dto.UserDto;
+import ewm.dto.UserShortDto;
+import ewm.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+@Slf4j
 @RestController
 @RequestMapping(path = "/admin/users")
 @RequiredArgsConstructor
@@ -22,19 +27,33 @@ public class AdminUserController {
     public List<UserDto> getAll(@RequestParam(required = false) List<Long> ids,
                                 @RequestParam(defaultValue = "0") int from,
                                 @RequestParam(defaultValue = "10") int size) {
+        log.info("Запрос на получение всех пользователей: {}", ids);
         return userService.getAll(ids, from, size);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto create(@Valid @RequestBody UserDto userDto) {
+        log.info("Запрос на создание пользователя: {}", userDto);
         return userService.create(userDto);
     }
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable("userId") long id) {
+        log.info("Запрос на удаление пользователя: {}", id);
         userService.delete(id);
     }
 
+    @GetMapping("/short/{userId}")
+    public UserShortDto findUserShortDtoById(@PathVariable("userId") Long userId) {
+        log.info("Запрос на поиск пользователя: {}", userId);
+        return userService.findUserShortDtoById(userId);
+    }
+
+    @PostMapping("/short/map")
+    public Map<Long, UserShortDto> findUserShortDtoById(@RequestBody Set<Long> usersId) {
+        log.info("Запрос на получение пользователей по id: {}", usersId);
+        return userService.findUserShortDtoById(usersId);
+    }
 }

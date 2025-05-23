@@ -1,4 +1,4 @@
-package ewm.event.feign.category;
+package ewm.feign.category;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +14,6 @@ public interface CategoryFeign {
     @GetMapping("/categories/{id}")
     CategoryDto getCategoryById(@PathVariable Long id);
 
-    @PostMapping("/categories/list")
+    @PostMapping("/categories/map")
     Map<Long, CategoryDto> getCategoryById(@RequestBody Set<Long> categoriesId);
 }

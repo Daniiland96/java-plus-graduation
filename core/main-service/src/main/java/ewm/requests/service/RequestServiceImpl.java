@@ -4,6 +4,8 @@ import ewm.event.model.Event;
 import ewm.event.model.EventState;
 import ewm.event.repository.EventRepository;
 import ewm.exception.*;
+import ewm.feign.user.UserFeign;
+import ewm.feign.user.UserShortDto;
 import ewm.requests.dto.EventRequestStatusUpdateRequest;
 import ewm.requests.dto.EventRequestStatusUpdateResult;
 import ewm.requests.dto.ParticipationRequestDto;
@@ -11,25 +13,28 @@ import ewm.requests.mapper.RequestMapper;
 import ewm.requests.model.Request;
 import ewm.requests.model.RequestStatus;
 import ewm.requests.repository.RequestRepository;
-import ewm.user.repository.UserRepository;
+import feign.FeignException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
-    private final UserRepository userRepository;
+    private final UserFeign userFeign;
     private final RequestRepository requestRepository;
     private final RequestMapper requestMapper;
     private final EventRepository eventRepository;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
+        findUser(userId);
         List<Request> requests = requestRepository.findByRequesterId(userId);
         return requests.stream()
                 .map(requestMapper::toParticipationRequestDto)
@@ -38,8 +43,9 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
+        UserShortDto user = findUser(userId);
         if (eventRepository.findByIdAndInitiatorId(eventId, userId).isPresent()) {
-            throw new InitiatorRequestException("Пользователь с ID - " + userId + ", не найден.");
+            throw new InitiatorRequestException("Пользователь с ID - " + userId + ", является создателем события с ID - " + eventId);
         }
 
         if (requestRepository.findByRequesterIdAndEventId(userId, eventId).isPresent()) {
@@ -52,7 +58,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         Request request = new Request();
-        request.setRequester(userRepository.findById(userId).get());
+        request.setRequesterId(userId);
         request.setEvent(event);
 
         Long confirmedRequests = requestRepository.countRequestsByEventAndStatus(event, RequestStatus.CONFIRMED);
@@ -77,6 +83,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
+        findUser(userId);
         Request cancelRequest = requestRepository.findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Request.class, "Запрос с ID - " + requestId + ", не найден."));
         cancelRequest.setStatus(RequestStatus.CANCELED);
@@ -85,9 +92,10 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
+        findUser(userId);
         List<Event> userEvents = eventRepository.findAllByInitiatorId(userId);
         Event event = userEvents.stream()
-                .filter(e -> e.getInitiator().getId().equals(userId))
+                .filter(e -> e.getInitiatorId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new ValidationException("Пользователь с ID - " + userId + ", не является инициатором события с ID - " + eventId + "."));
         return requestRepository.findByEventId(event.getId()).stream()
@@ -98,6 +106,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public EventRequestStatusUpdateResult updateStatusRequest(Long userId, Long eventId,
                                                               EventRequestStatusUpdateRequest eventRequest) {
+        findUser(userId);
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие с ID - " + eventId + ", не найдено."));
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
@@ -152,5 +161,15 @@ public class RequestServiceImpl implements RequestService {
         resultRequest.setConfirmedRequests(confirmedRequests);
         resultRequest.setRejectedRequests(rejectedRequests);
         return resultRequest;
+    }
+
+    private UserShortDto findUser(Long userId) {
+        try {
+            UserShortDto dto = userFeign.findUserShortDtoById(userId);
+            log.info("Результат поиска user-service: {}", dto);
+            return dto;
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(UserShortDto.class, "Пользователь c ID - " + userId + ", не найден.");
+        }
     }
 }

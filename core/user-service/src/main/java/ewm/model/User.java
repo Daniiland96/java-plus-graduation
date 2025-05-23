@@ -1,4 +1,4 @@
-package ewm.user.model;
+package ewm.model;
 
 import jakarta.persistence.*;
 import lombok.*;

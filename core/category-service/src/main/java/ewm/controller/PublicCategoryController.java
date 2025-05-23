@@ -30,7 +30,7 @@ public class PublicCategoryController {
         return categoryService.getCategoryById(id);
     }
 
-    @PostMapping("/list")
+    @PostMapping("/map")
     public Map<Long, CategoryDto> getCategoryById(@RequestBody Set<Long> categoriesId) {
         log.info("Запрос на получение категорий по id: {}", categoriesId);
         return categoryService.getCategoryById(categoriesId);

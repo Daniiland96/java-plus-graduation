@@ -12,23 +12,30 @@ import ewm.event.repository.EventRepository;
 import ewm.exception.EntityNotFoundException;
 import ewm.exception.InitiatorRequestException;
 import ewm.exception.ValidationException;
+import ewm.feign.user.UserFeign;
+import ewm.feign.user.UserShortDto;
 import ewm.requests.repository.RequestRepository;
-import ewm.user.model.User;
-import ewm.user.repository.UserRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
+    private final UserFeign userFeign;
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
     private final CommentMapper commentMapper;
@@ -37,24 +44,30 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentDto privateAdd(Long userId, Long eventId, InputCommentDto inputCommentDto) {
         Event event = findEvent(eventId);
-        if (event.getInitiator().getId().equals(userId)) {
+        if (event.getInitiatorId().equals(userId)) {
             throw new ValidationException(Comment.class, " Нельзя оставлять комментарии к своему событию.");
         }
         if (requestRepository.findByRequesterIdAndEventId(userId, eventId).isEmpty()) {
             throw new ValidationException(Comment.class, " Пользователь с ID - " + userId + ", не заявился на событие с ID - " + eventId + ".");
         }
-        User author = findUser(userId);
+        UserShortDto author = findUser(userId);
 
         Comment comment = commentMapper.toComment(inputCommentDto, author, event);
+        log.info("Результат маппинга: {}", comment);
         comment.setCreated(LocalDateTime.now());
-        return commentMapper.toCommentDto(commentRepository.save(comment));
+        comment = commentRepository.save(comment);
+        log.info("Сохраняем комментарий в БД: {}", comment);
+
+        CommentDto dto = commentMapper.toCommentDto(comment, author);
+        log.info("Результат маппинга: {}", dto);
+        return dto;
     }
 
     @Override
     public void privateDelete(Long userId, Long commentId) {
-        User author = findUser(userId);
+        UserShortDto author = findUser(userId);
         Comment comment = findComment(commentId);
-        if (!comment.getAuthor().getId().equals(userId)) {
+        if (!comment.getAuthorId().equals(userId)) {
             throw new InitiatorRequestException(" Нельзя удалить комментарий другого пользователя.");
         }
         commentRepository.deleteById(commentId);
@@ -67,69 +80,120 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto privateUpdate(Long userId, Long commentId, UpdateCommentDto updateCommentDto) {
-        User author = findUser(userId);
+        UserShortDto author = findUser(userId);
         Comment comment = findComment(commentId);
-        if (!comment.getAuthor().getId().equals(userId)) {
+        if (!comment.getAuthorId().equals(userId)) {
             throw new InitiatorRequestException(" Нельзя редактировать комментарий другого пользователя.");
         }
         comment.setText(updateCommentDto.getText());
-        return commentMapper.toCommentDto(commentRepository.save(comment));
+        comment = commentRepository.save(comment);
+        log.info("Обновляем комментарий в БД: {}", comment);
+
+        CommentDto dto = commentMapper.toCommentDto(comment, author);
+        log.info("Результат маппинга: {}", dto);
+        return dto;
     }
 
     @Override
     public CommentDto adminUpdate(Long id, UpdateCommentDto updateCommentDto) {
 
-        Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(Comment.class, "Комментарий c ID - " + id + ", не найден."));
+        Comment comment = findComment(id);
 
         if (updateCommentDto.getText() != null) {
             comment.setText(updateCommentDto.getText());
         }
-        return commentMapper.toCommentDto(commentRepository.save(comment));
+
+        comment = commentRepository.save(comment);
+        log.info("Обновляем комментарий в БД: {}", comment);
+        UserShortDto author = findUser(comment.getAuthorId());
+
+        CommentDto dto = commentMapper.toCommentDto(comment, author);
+        log.info("Результат маппинга: {}", dto);
+        return dto;
     }
 
     @Override
     public List<CommentDto> findCommentsByEventId(Long eventId, Integer from, Integer size) {
-        findEvent(eventId);
+        Event event = findEvent(eventId);
         Pageable pageable = PageRequest.of(from, size);
-        return commentMapper.toCommentDtos(commentRepository.findAllByEventId(eventId, pageable));
+        List<Comment> comments = commentRepository.findAllByEventId(eventId, pageable);
+        log.info("Найдены комментарии: {}", comments);
+
+        if (!comments.isEmpty()) {
+            return addUsersShortDto(comments);
+        }
+        return new ArrayList<>();
     }
 
     @Override
     public CommentDto findCommentById(Long commentId) {
         Comment comment = findComment(commentId);
-        return commentMapper.toCommentDto(comment);
+        UserShortDto author = findUser(comment.getAuthorId());
+        return commentMapper.toCommentDto(comment, author);
     }
 
     @Override
     public List<CommentDto> findCommentsByEventIdAndUserId(Long eventId, Long userId, Integer from, Integer size) {
-        User user = findUser(userId);
         Event event = findEvent(eventId);
         Pageable pageable = PageRequest.of(from, size);
-        return commentMapper.toCommentDtos(commentRepository.findAllByEventIdAndAuthorId(eventId, userId, pageable));
+        List<Comment> comments = commentRepository.findAllByEventIdAndAuthorId(eventId, userId, pageable);
+        if (!comments.isEmpty()) {
+            return addUsersShortDto(comments);
+        }
+        return new ArrayList<>();
     }
 
     @Override
-    public List<CommentDto> findCommentsByUserId(Long eventId, Integer from, Integer size) {
-        User user = findUser(eventId);
+    public List<CommentDto> findCommentsByUserId(Long userId, Integer from, Integer size) {
         Pageable pageable = PageRequest.of(from, size);
-        return commentMapper.toCommentDtos(commentRepository.findAllByAuthorId(user.getId(), pageable));
+        List<Comment> comments = commentRepository.findAllByAuthorId(userId, pageable);
+        if (!comments.isEmpty()) {
+            return addUsersShortDto(comments);
+        }
+        return new ArrayList<>();
     }
 
     private Event findEvent(Long eventId) {
-        return eventRepository.findByIdAndState(eventId, EventState.PUBLISHED)
+        Event event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        Event.class, "Событие c ID - " + eventId + ", не найдено или ещё не опубликовано")
-                );
+                        Event.class, "Событие c ID - " + eventId + ", не найдено или ещё не опубликовано"));
+        log.info("Найдено событие: {}", event);
+        return event;
     }
 
-    private User findUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь c ID - " + userId + ", не найден."));
+    private UserShortDto findUser(Long userId) {
+        try {
+            UserShortDto dto = userFeign.findUserShortDtoById(userId);
+            log.info("Результат поиска user-service: {}", dto);
+            return dto;
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(UserShortDto.class, "Пользователь c ID - " + userId + ", не найден.");
+        }
     }
 
     private Comment findComment(Long commentId) {
-        return commentRepository.findById(commentId)
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException(Comment.class, "Комментарий c ID - " + commentId + ", не найден."));
+        log.info("Найден коментарий: {}", comment);
+        return comment;
+    }
+
+    private List<CommentDto> addUsersShortDto(List<Comment> comments) {
+        Set<Long> usersId = comments.stream().map(Comment::getAuthorId).collect(Collectors.toSet());
+        Map<Long, UserShortDto> users;
+        try {
+            users = userFeign.findUserShortDtoById(usersId);
+            log.info("Результат поиска user-service: {}", users);
+        } catch (FeignException e) {
+            throw new EntityNotFoundException(UserShortDto.class, "Пользователи не найдены.");
+        }
+        List<CommentDto> result = new ArrayList<>();
+        for (Comment comment : comments) {
+            UserShortDto author = users.get(comment.getAuthorId());
+            CommentDto dto = commentMapper.toCommentDto(comment, author);
+            result.add(dto);
+        }
+        log.info("Результат добавления автора комментария: {}", result);
+        return result;
     }
 }

@@ -4,7 +4,7 @@ import ewm.comment.dto.CommentDto;
 import ewm.comment.dto.InputCommentDto;
 import ewm.comment.model.Comment;
 import ewm.event.model.Event;
-import ewm.user.model.User;
+import ewm.feign.user.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -13,20 +13,22 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface CommentMapper {
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "author", source = "author")
+    @Mapping(target = "authorId", source = "author.id")
     @Mapping(target = "event", source = "event")
     @Mapping(target = "created", ignore = true)
-    Comment toComment(InputCommentDto inputCommentDto, User author, Event event);
+    Comment toComment(InputCommentDto inputCommentDto, UserShortDto author, Event event);
 
     @Mapping(target = "eventId", source = "event.id")
-    CommentDto toCommentDto(Comment comment);
+    @Mapping(target = "author", source = "author")
+    CommentDto toCommentDto(Comment comment, UserShortDto author);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "author", source = "admin")
+    @Mapping(target = "authorId", source = "commentDto.author.id")
     @Mapping(target = "event", source = "event")
     @Mapping(target = "created", expression = "java(java.time.LocalDateTime.now())")
-    Comment toComment(CommentDto commentDto, User admin, Event event);
+    Comment toComment(CommentDto commentDto, Event event);
 
     @Mapping(target = "eventId", source = "event.id")
+    @Mapping(target = "author", ignore = true)
     List<CommentDto> toCommentDtos(List<Comment> comments);
 }

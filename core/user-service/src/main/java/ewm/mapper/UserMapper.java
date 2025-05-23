@@ -1,8 +1,8 @@
-package ewm.user.mapper;
+package ewm.mapper;
 
-import ewm.user.dto.UserDto;
-import ewm.user.dto.UserShortDto;
-import ewm.user.model.User;
+import ewm.dto.UserDto;
+import ewm.dto.UserShortDto;
+import ewm.model.User;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -17,4 +17,6 @@ public interface UserMapper {
     List<UserDto> toUserDtoList(List<User> users);
 
     User toUser(UserDto userDto);
+
+    List<UserShortDto> toUserShortDto(List<User> users);
 }

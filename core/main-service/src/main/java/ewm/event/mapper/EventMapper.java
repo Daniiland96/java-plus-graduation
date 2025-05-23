@@ -3,8 +3,9 @@ package ewm.event.mapper;
 import ewm.event.dto.EventFullDto;
 import ewm.event.dto.EventShortDto;
 import ewm.event.dto.NewEventDto;
-import ewm.event.feign.category.CategoryDto;
+import ewm.feign.category.CategoryDto;
 import ewm.event.model.Event;
+import ewm.feign.user.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -21,22 +22,40 @@ public interface EventMapper {
     @Mapping(target = "views", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "initiator", ignore = true)
     List<EventShortDto> toEventShortDto(List<Event> event);
 
     @Mapping(target = "views", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "initiator", ignore = true)
     EventFullDto toEventFullDto(Event event);
 
     @Mapping(target = "id", source = "event.id")
     @Mapping(target = "views", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     @Mapping(target = "category", source = "categoryDto")
+    @Mapping(target = "initiator", ignore = true)
     EventFullDto toEventFullDto(Event event, CategoryDto categoryDto);
+
+    @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "confirmedRequests", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "initiator", source = "userShortDto")
+    EventFullDto toEventFullDto(Event event, UserShortDto userShortDto);
+
+    @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "confirmedRequests", ignore = true)
+    @Mapping(target = "initiator", source = "userShortDto")
+    @Mapping(target = "category", source = "categoryDto")
+    EventFullDto toEventFullDto(Event event, UserShortDto userShortDto, CategoryDto categoryDto);
 
     @Mapping(target = "views", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "initiator", ignore = true)
     List<EventFullDto> toEventFullDtos(List<Event> events);
 
     @Mapping(target = "categoryId", source = "category")
@@ -44,11 +63,10 @@ public interface EventMapper {
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "eventDate", source = "eventDate")
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "initiator", ignore = true)
+    @Mapping(target = "initiatorId", ignore = true)
     @Mapping(target = "state", ignore = true)
     Event toEvent(NewEventDto newEventDto);
 
-//    @Mapping(target = "category", ignore = true)
     List<EventShortDto> toEventShortDtos(List<EventFullDto> eventFullDtos);
 
     default LocalDateTime stringToLocalDateTime(String stringDate) {
