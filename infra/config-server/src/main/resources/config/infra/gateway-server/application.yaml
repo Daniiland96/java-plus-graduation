@@ -25,7 +25,7 @@ spring:
             - Path=/categories/**, /admin/categories/**
 
         - id: user-service
-          uri: lb://category-service
+          uri: lb://user-service
           predicates:
             - Path=/admin/users/**
 

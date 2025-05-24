@@ -4,8 +4,6 @@ import ewm.ParamDto;
 import ewm.client.RestStatClient;
 import ewm.comment.repository.CommentRepository;
 import ewm.event.dto.*;
-import ewm.feign.category.CategoryDto;
-import ewm.feign.category.CategoryFeign;
 import ewm.event.mapper.EventMapper;
 import ewm.event.model.*;
 import ewm.event.repository.EventRepository;
@@ -14,13 +12,13 @@ import ewm.exception.ConditionNotMetException;
 import ewm.exception.EntityNotFoundException;
 import ewm.exception.InitiatorRequestException;
 import ewm.exception.ValidationException;
+import ewm.feign.category.CategoryDto;
+import ewm.feign.category.CategoryFeign;
 import ewm.feign.user.UserFeign;
 import ewm.feign.user.UserShortDto;
 import ewm.requests.model.Request;
 import ewm.requests.model.RequestStatus;
 import ewm.requests.repository.RequestRepository;
-import ewm.user.model.User;
-import ewm.user.repository.UserRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -208,29 +206,25 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> findUserEvents(Long userId, Integer from, Integer size) {
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
         Pageable pageable = PageRequest.of(from, size);
         List<Event> events = eventRepository.findAllByInitiatorId(userId, pageable);
-        List<EventFullDto> eventFullDtos = addCategoriesDto(events);
+        List<EventFullDto> eventFullDtos = addCategoriesDto(eventMapper.toEventFullDtos(events), events);
+        addUserShortDto(eventFullDtos, events);
         return eventMapper.toEventShortDtos(addRequests(addViews(eventFullDtos)));
     }
 
     @Override
     public EventFullDto findUserEventById(Long userId, Long eventId) {
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие не найдено"));
         CategoryDto category = getCategoryDto(event.getCategoryId());
-        EventFullDto result = eventMapper.toEventFullDto(event, category);
+        UserShortDto user = getUserShortDto(userId);
+        EventFullDto result = eventMapper.toEventFullDto(event, user, category);
         return addRequests(addViews(result));
     }
 
     @Override
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
-        User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(User.class, "Пользователь не найден"));
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие не найдено"));
         if (event.getState() == EventState.PUBLISHED) {
@@ -253,9 +247,10 @@ public class EventServiceImpl implements EventService {
 
         checkEvent(event, updateRequest);
         CategoryDto category = getCategoryDto(event.getCategoryId());
+        UserShortDto user = getUserShortDto(userId);
 
         event = eventRepository.save(event);
-        return eventMapper.toEventFullDto(event, category);
+        return eventMapper.toEventFullDto(event, user, category);
     }
 
     @Override

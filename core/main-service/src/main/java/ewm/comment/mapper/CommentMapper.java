@@ -18,7 +18,8 @@ public interface CommentMapper {
     @Mapping(target = "created", ignore = true)
     Comment toComment(InputCommentDto inputCommentDto, UserShortDto author, Event event);
 
-    @Mapping(target = "eventId", source = "event.id")
+    @Mapping(target = "id", source = "comment.id")
+    @Mapping(target = "eventId", source = "comment.event.id")
     @Mapping(target = "author", source = "author")
     CommentDto toCommentDto(Comment comment, UserShortDto author);
 
