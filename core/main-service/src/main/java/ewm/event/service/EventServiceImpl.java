@@ -149,6 +149,7 @@ public class EventServiceImpl implements EventService {
         CategoryDto category = getCategoryDto(newEventDto.getCategory());
 
         Event event = eventMapper.toEvent(newEventDto);
+        log.info("Создаем событие: {}", event);
         if (newEventDto.getPaid() == null) {
             event.setPaid(false);
         }

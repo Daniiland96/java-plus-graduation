@@ -2,16 +2,20 @@ package ewm.compilation.mapper;
 
 import ewm.compilation.dto.CompilationDto;
 import ewm.compilation.model.Compilation;
+import ewm.event.dto.EventShortDto;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CompilationMapper {
 
-   Compilation toCompilation(CompilationDto compilationDto);
+    Compilation toCompilation(CompilationDto compilationDto);
 
-   CompilationDto toCompilationDto(Compilation compilation);
+    @Mapping(target = "events", source = "eventDtos")
+    CompilationDto toCompilationDto(Compilation compilation, List<EventShortDto> eventDtos);
 
-   List<CompilationDto> toCompilationDtos(List<Compilation> compilations);
+    @Mapping(target = "events", ignore = true)
+    List<CompilationDto> toCompilationDtos(List<Compilation> compilations);
 }

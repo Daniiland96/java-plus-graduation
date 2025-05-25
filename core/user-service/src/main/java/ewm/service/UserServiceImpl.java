@@ -57,24 +57,24 @@ public class UserServiceImpl implements UserService {
     }
 
     public Map<Long, UserShortDto> findUserShortDtoById(Set<Long> usersId) {
-            List<User> users = userRepository.findAllById(usersId);
-            if (users.isEmpty()) {
-                throw new UserNotFoundException("Пользователи не найдены.");
-            }
-
-            Map<Long, UserShortDto> result = userMapper.toUserShortDto(users).stream()
-                    .collect(Collectors.toMap(UserShortDto::getId, Function.identity()));
-
-            if (usersId.size() > result.size()) {
-                List<Long> notAvailabilityCategory = new ArrayList<>();
-                for (Long id : usersId) {
-                    if (!result.containsKey(id)) {
-                        notAvailabilityCategory.add(id);
-                    }
-                }
-                throw new UserNotFoundException("Не найдены пользователи с id: " + notAvailabilityCategory);
-            }
-            log.info("Результат поиска пользователей по id: {}", result);
-            return result;
+        List<User> users = userRepository.findAllById(usersId);
+        if (users.isEmpty()) {
+            throw new UserNotFoundException("Пользователи не найдены.");
         }
+
+        Map<Long, UserShortDto> result = userMapper.toUserShortDto(users).stream()
+                .collect(Collectors.toMap(UserShortDto::getId, Function.identity()));
+
+        if (usersId.size() > result.size()) {
+            List<Long> notAvailabilityCategory = new ArrayList<>();
+            for (Long id : usersId) {
+                if (!result.containsKey(id)) {
+                    notAvailabilityCategory.add(id);
+                }
+            }
+            throw new UserNotFoundException("Не найдены пользователи с id: " + notAvailabilityCategory);
+        }
+        log.info("Результат поиска пользователей по id: {}", result);
+        return result;
     }
+}

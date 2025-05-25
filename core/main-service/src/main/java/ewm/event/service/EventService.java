@@ -23,4 +23,4 @@ public interface EventService {
     EventFullDto update(Long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
     List<EventFullDto> findAllByCategoryId(Long categoryId, Integer from, Integer size);
- }
+}

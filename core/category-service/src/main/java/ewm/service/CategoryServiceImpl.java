@@ -95,7 +95,7 @@ public class CategoryServiceImpl implements CategoryService {
         } catch (FeignException e) {
             throw new DataIntegrityViolationException("Возможно есть зависимые события в event-service. " + e.getMessage());
         }
-        if(!eventFullDtos.isEmpty()) {
+        if (!eventFullDtos.isEmpty()) {
             throw new DataIntegrityViolationException("Есть зависимые события в event-service: " + eventFullDtos);
         }
         categoryRepository.deleteById(id);

@@ -33,7 +33,7 @@ public class Event {
 //    @JoinColumn(name = "initiator_id")
 //    private User initiator;
 
-    @Column(name = "initiator_id", nullable = false)
+    @Column(name = "initiator_id")
     private Long initiatorId;
     @ManyToOne
     @JoinColumn(name = "location_id")
