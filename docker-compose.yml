@@ -46,5 +46,6 @@ services:
       psql postgresql://main:main@ewm-db:5432/ewm-main -v ON_ERROR_STOP=1 <<EOSQL
       CREATE DATABASE ewm_category;
       CREATE DATABASE ewm_user;
+      CREATE DATABASE ewm_request;
       EOSQL
       '

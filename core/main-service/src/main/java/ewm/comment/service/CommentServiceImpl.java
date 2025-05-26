@@ -6,15 +6,15 @@ import ewm.comment.dto.UpdateCommentDto;
 import ewm.comment.mapper.CommentMapper;
 import ewm.comment.model.Comment;
 import ewm.comment.repository.CommentRepository;
+import ewm.dto.event.EventState;
+import ewm.dto.user.UserShortDto;
 import ewm.event.model.Event;
-import ewm.event.model.EventState;
 import ewm.event.repository.EventRepository;
 import ewm.exception.EntityNotFoundException;
 import ewm.exception.InitiatorRequestException;
 import ewm.exception.ValidationException;
+import ewm.feign.request.RequestFeign;
 import ewm.feign.user.UserFeign;
-import ewm.feign.user.UserShortDto;
-import ewm.requests.repository.RequestRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final UserFeign userFeign;
     private final EventRepository eventRepository;
-    private final RequestRepository requestRepository;
+    private final RequestFeign requestFeign;
     private final CommentMapper commentMapper;
 
 
@@ -47,7 +47,7 @@ public class CommentServiceImpl implements CommentService {
         if (event.getInitiatorId().equals(userId)) {
             throw new ValidationException(Comment.class, " Нельзя оставлять комментарии к своему событию.");
         }
-        if (requestRepository.findByRequesterIdAndEventId(userId, eventId).isEmpty()) {
+        if (requestFeign.findByRequesterIdAndEventId(userId, eventId).isEmpty()) {
             throw new ValidationException(Comment.class, " Пользователь с ID - " + userId + ", не заявился на событие с ID - " + eventId + ".");
         }
         UserShortDto author = findUser(userId);

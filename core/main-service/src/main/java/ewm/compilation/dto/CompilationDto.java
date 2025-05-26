@@ -1,7 +1,7 @@
 package ewm.compilation.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import ewm.event.dto.EventShortDto;
+import ewm.dto.event.EventShortDto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 

@@ -1,7 +1,8 @@
 package ewm.controller;
 
-import ewm.dto.CategoryDto;
+
 import ewm.dto.NewCategoryDto;
+import ewm.dto.category.CategoryDto;
 import ewm.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

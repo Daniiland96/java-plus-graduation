@@ -1,5 +1,6 @@
 package ewm.event.dto;
 
+import ewm.dto.event.LocationDto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;

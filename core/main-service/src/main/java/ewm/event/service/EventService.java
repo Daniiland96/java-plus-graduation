@@ -1,8 +1,11 @@
 package ewm.event.service;
 
+import ewm.dto.event.EventFullDto;
+import ewm.dto.event.EventShortDto;
 import ewm.event.dto.*;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EventService {
 
@@ -23,4 +26,8 @@ public interface EventService {
     EventFullDto update(Long eventId, UpdateEventAdminRequest updateEventAdminRequest);
 
     List<EventFullDto> findAllByCategoryId(Long categoryId, Integer from, Integer size);
+
+    Optional<EventFullDto> findOptEventByUserIdAndId(Long userId, Long eventId);
+
+    EventFullDto findEventById(Long eventId);
 }

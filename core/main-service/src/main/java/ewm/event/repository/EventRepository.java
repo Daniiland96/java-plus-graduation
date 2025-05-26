@@ -1,7 +1,7 @@
 package ewm.event.repository;
 
+import ewm.dto.event.EventState;
 import ewm.event.model.Event;
-import ewm.event.model.EventState;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

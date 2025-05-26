@@ -1,10 +1,10 @@
 package ewm.service;
 
-import ewm.dto.CategoryDto;
 import ewm.dto.NewCategoryDto;
+import ewm.dto.category.CategoryDto;
+import ewm.dto.event.EventFullDto;
 import ewm.exception.CategoryNotFoundException;
 import ewm.feign.event.EventFeign;
-import ewm.feign.event.EventFullDto;
 import ewm.mapper.CategoryMapper;
 import ewm.model.Category;
 import ewm.repository.CategoryRepository;

@@ -1,5 +1,6 @@
 package ewm.event.model;
 
+import ewm.dto.event.EventState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,10 +29,6 @@ public class Event {
 
     @Column(name = "event_date")
     private LocalDateTime eventDate; // дата проведения события
-
-//    @ManyToOne
-//    @JoinColumn(name = "initiator_id")
-//    private User initiator;
 
     @Column(name = "initiator_id")
     private Long initiatorId;

@@ -1,7 +1,7 @@
 package ewm.service;
 
-import ewm.dto.CategoryDto;
 import ewm.dto.NewCategoryDto;
+import ewm.dto.category.CategoryDto;
 
 import java.util.List;
 import java.util.Map;

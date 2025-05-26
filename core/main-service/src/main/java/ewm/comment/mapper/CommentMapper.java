@@ -3,8 +3,8 @@ package ewm.comment.mapper;
 import ewm.comment.dto.CommentDto;
 import ewm.comment.dto.InputCommentDto;
 import ewm.comment.model.Comment;
+import ewm.dto.user.UserShortDto;
 import ewm.event.model.Event;
-import ewm.feign.user.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

@@ -1,7 +1,7 @@
 package ewm.event.controller;
 
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.EventShortDto;
+import ewm.dto.event.EventFullDto;
+import ewm.dto.event.EventShortDto;
 import ewm.event.dto.NewEventDto;
 import ewm.event.dto.UpdateEventUserRequest;
 import ewm.event.service.EventService;
@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -43,6 +44,12 @@ public class PrivateEventController {
     public EventFullDto findUserEventById(@PathVariable(name = "userId") Long userId,
                                           @PathVariable(name = "eventId") Long eventId) {
         return service.findUserEventById(userId, eventId);
+    }
+
+    @GetMapping("/optional/{eventId}")
+    public Optional<EventFullDto> findOptEventByIdAndUserId(@PathVariable(name = "userId") Long userId,
+                                                            @PathVariable(name = "eventId") Long eventId) {
+        return service.findOptEventByUserIdAndId(userId, eventId);
     }
 
     @PatchMapping("/{eventId}")

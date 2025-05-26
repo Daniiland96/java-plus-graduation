@@ -1,7 +1,7 @@
 package ewm.mapper;
 
-import ewm.dto.CategoryDto;
 import ewm.dto.NewCategoryDto;
+import ewm.dto.category.CategoryDto;
 import ewm.model.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

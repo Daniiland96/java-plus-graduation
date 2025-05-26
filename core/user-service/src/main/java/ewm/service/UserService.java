@@ -1,7 +1,7 @@
 package ewm.service;
 
-import ewm.dto.UserDto;
-import ewm.dto.UserShortDto;
+import ewm.dto.user.UserDto;
+import ewm.dto.user.UserShortDto;
 
 import java.util.List;
 import java.util.Map;

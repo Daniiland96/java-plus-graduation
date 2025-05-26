@@ -2,8 +2,8 @@ package ewm.event.controller;
 
 import ewm.ParamHitDto;
 import ewm.client.RestStatClient;
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.EventShortDto;
+import ewm.dto.event.EventFullDto;
+import ewm.dto.event.EventShortDto;
 import ewm.event.dto.ReqParam;
 import ewm.event.model.EventSort;
 import ewm.event.service.EventService;

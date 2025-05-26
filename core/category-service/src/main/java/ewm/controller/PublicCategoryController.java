@@ -1,6 +1,7 @@
 package ewm.controller;
 
-import ewm.dto.CategoryDto;
+
+import ewm.dto.category.CategoryDto;
 import ewm.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

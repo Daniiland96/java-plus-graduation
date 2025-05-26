@@ -2,7 +2,7 @@ package ewm.compilation.mapper;
 
 import ewm.compilation.dto.CompilationDto;
 import ewm.compilation.model.Compilation;
-import ewm.event.dto.EventShortDto;
+import ewm.dto.event.EventShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

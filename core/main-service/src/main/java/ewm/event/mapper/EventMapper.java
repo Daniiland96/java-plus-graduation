@@ -1,11 +1,11 @@
 package ewm.event.mapper;
 
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.EventShortDto;
+import ewm.dto.category.CategoryDto;
+import ewm.dto.event.EventFullDto;
+import ewm.dto.event.EventShortDto;
+import ewm.dto.user.UserShortDto;
 import ewm.event.dto.NewEventDto;
 import ewm.event.model.Event;
-import ewm.feign.category.CategoryDto;
-import ewm.feign.user.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;

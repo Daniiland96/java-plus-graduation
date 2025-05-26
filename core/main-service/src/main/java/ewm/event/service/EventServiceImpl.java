@@ -3,22 +3,28 @@ package ewm.event.service;
 import ewm.ParamDto;
 import ewm.client.RestStatClient;
 import ewm.comment.repository.CommentRepository;
+import ewm.dto.category.CategoryDto;
+import ewm.dto.event.EventFullDto;
+import ewm.dto.event.EventShortDto;
+import ewm.dto.event.EventState;
+import ewm.dto.request.ParticipationRequestDto;
+import ewm.dto.request.RequestStatus;
+import ewm.dto.user.UserShortDto;
 import ewm.event.dto.*;
 import ewm.event.mapper.EventMapper;
-import ewm.event.model.*;
+import ewm.event.model.AdminStateAction;
+import ewm.event.model.Event;
+import ewm.event.model.Location;
+import ewm.event.model.PrivateStateAction;
 import ewm.event.repository.EventRepository;
 import ewm.event.repository.LocationRepository;
 import ewm.exception.ConditionNotMetException;
 import ewm.exception.EntityNotFoundException;
 import ewm.exception.InitiatorRequestException;
 import ewm.exception.ValidationException;
-import ewm.feign.category.CategoryDto;
 import ewm.feign.category.CategoryFeign;
+import ewm.feign.request.RequestFeign;
 import ewm.feign.user.UserFeign;
-import ewm.feign.user.UserShortDto;
-import ewm.requests.model.Request;
-import ewm.requests.model.RequestStatus;
-import ewm.requests.repository.RequestRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +50,7 @@ public class EventServiceImpl implements EventService {
     private final UserFeign userFeign;
     private final CategoryFeign categoryFeign;
     private final LocationRepository locationRepository;
-    private final RequestRepository requestRepository;
+    private final RequestFeign requestFeign;
     private final CommentRepository commentRepository;
 
     @Override
@@ -225,6 +231,33 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public Optional<EventFullDto> findOptEventByUserIdAndId(Long userId, Long eventId) {
+        Optional<Event> eventOpt = eventRepository.findByIdAndInitiatorId(eventId, userId);
+        if (eventOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Event event = eventOpt.get();
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+        UserShortDto user = getUserShortDto(userId);
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, user, category);
+        addRequests(addViews(eventFullDto));
+        return Optional.of(eventFullDto);
+    }
+
+    @Override
+    public EventFullDto findEventById(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие c ID - " + eventId + ", не найдено."));
+
+        CategoryDto category = getCategoryDto(event.getCategoryId());
+        UserShortDto userShortDto = getUserShortDto(event.getInitiatorId());
+
+        EventFullDto eventFullDto = eventMapper.toEventFullDto(event, userShortDto, category);
+        eventFullDto.setCommentsCount(commentRepository.countCommentByEvent_Id(event.getId()));
+        return addRequests(addViews(eventFullDto));
+    }
+
+    @Override
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(Event.class, "Событие не найдено"));
@@ -336,17 +369,27 @@ public class EventServiceImpl implements EventService {
 
     private List<EventFullDto> addRequests(List<EventFullDto> eventDtos) {
         List<Long> eventIds = eventDtos.stream().map(EventFullDto::getId).toList();
-        List<Request> requests = requestRepository.findAllByEventIdInAndStatus(eventIds, RequestStatus.CONFIRMED);
+        List<ParticipationRequestDto> requests;
+        try {
+            requests = requestFeign.findAllByEventIdInAndStatus(eventIds, RequestStatus.CONFIRMED);
+            log.info("Получаем запросы из request-service: {}", requests);
+        } catch (FeignException e) {
+            throw new jakarta.persistence.EntityNotFoundException("Ошибка при обращении в request-service");
+        }
         Map<Long, Long> requestsMap = requests.stream()
-                .collect(Collectors.groupingBy(request -> request.getEvent().getId(), Collectors.counting()));
+                .collect(Collectors.groupingBy(ParticipationRequestDto::getEvent, Collectors.counting()));
         eventDtos.forEach(eventDto -> eventDto.setConfirmedRequests(requestsMap.getOrDefault(eventDto.getId(), 0L)));
         return eventDtos;
     }
 
     private EventFullDto addRequests(EventFullDto eventDto) {
-        eventDto.setConfirmedRequests(
-                requestRepository.countByEventIdAndStatus(eventDto.getId(), RequestStatus.CONFIRMED)
-        );
+        try {
+            eventDto.setConfirmedRequests(
+                    requestFeign.findCountByEventIdInAndStatus(eventDto.getId(), RequestStatus.CONFIRMED)
+            );
+        } catch (FeignException e) {
+            throw new jakarta.persistence.EntityNotFoundException("Ошибка при обращении в request-service");
+        }
         return eventDto;
     }
 

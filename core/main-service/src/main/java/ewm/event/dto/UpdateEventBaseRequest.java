@@ -1,6 +1,7 @@
 package ewm.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ewm.dto.event.LocationDto;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;

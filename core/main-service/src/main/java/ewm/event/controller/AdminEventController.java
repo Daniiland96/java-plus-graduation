@@ -1,7 +1,7 @@
 package ewm.event.controller;
 
+import ewm.dto.event.EventFullDto;
 import ewm.event.dto.AdminEventParams;
-import ewm.event.dto.EventFullDto;
 import ewm.event.dto.UpdateEventAdminRequest;
 import ewm.event.service.EventService;
 import jakarta.validation.Valid;
@@ -51,6 +51,13 @@ public class AdminEventController {
     @PatchMapping("/{eventId}")
     public EventFullDto adminUpdateEvent(@PathVariable("eventId") long eventId,
                                          @Valid @RequestBody UpdateEventAdminRequest updateEventAdminRequest) {
+        log.info("Запрос на обновление админом события с id: {}, {}", eventId, updateEventAdminRequest);
         return eventService.update(eventId, updateEventAdminRequest);
+    }
+
+    @GetMapping("/{eventId}")
+    public EventFullDto findEventById(@PathVariable(name = "eventId") Long eventId) {
+        log.info("Запрос на поиск любого события по id: {}", eventId);
+        return eventService.findEventById(eventId);
     }
 }
