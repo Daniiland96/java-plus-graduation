@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Optional;
 
-@FeignClient(name = "main-service")
+@FeignClient(name = "event-service")
 public interface EventFeign {
     @GetMapping("/users/{userId}/events/optional/{eventId}")
     Optional<EventFullDto> findOptEventByIdAndUserId(@PathVariable(name = "userId") Long userId,

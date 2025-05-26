@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "main-service")
+@FeignClient(name = "event-service")
 public interface EventFeign {
     @GetMapping("/admin/events/check/category")
     List<EventFullDto> adminGetAllEventsByCategory(
