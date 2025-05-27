@@ -17,6 +17,7 @@ public class ErrorHandler {
     @ExceptionHandler({UserNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse notFoundException(final Exception e) {
+        log.error("{} - {}", HttpStatus.NOT_FOUND, e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 
@@ -26,18 +27,21 @@ public class ErrorHandler {
             MethodArgumentNotValidException.class
     })
     public ErrorResponse handleIBadRequestException(final Exception e) {
+        log.error("{} - {}", HttpStatus.BAD_REQUEST, e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 
     @ExceptionHandler({DataIntegrityViolationException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse onDataIntegrityViolationException(final Exception e) {
+        log.error("{} - {}", HttpStatus.CONFLICT, e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler({Throwable.class})
     public ErrorResponse handleAnyException(final Exception e) {
+        log.error("{} - {}", HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
 }
