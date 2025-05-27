@@ -16,7 +16,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiError handleException(final Throwable e) {
-        log.warn("500 {}", e.getMessage(), e);
+        log.error("{} - {}", HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
@@ -29,7 +29,7 @@ public class ErrorHandler {
     @ExceptionHandler({ValidateException.class, MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError validateException(final RuntimeException e) {
-        log.warn("400 {}", e.getMessage(), e);
+        log.error("{} - {}", HttpStatus.BAD_REQUEST, e.getMessage(), e);
         return new ApiError("Bad request",
                 e.getMessage(),
                 null);
