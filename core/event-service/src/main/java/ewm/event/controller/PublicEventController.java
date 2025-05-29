@@ -1,7 +1,5 @@
 package ewm.event.controller;
 
-import ewm.ParamHitDto;
-import ewm.client.RestStatClient;
 import ewm.dto.event.EventFullDto;
 import ewm.dto.event.EventShortDto;
 import ewm.event.dto.ReqParam;
@@ -28,7 +26,7 @@ public class PublicEventController {
     @Value("${main.service.app.name}")
     private String mainServiceAppName;
     private final EventService eventService;
-    private final RestStatClient statClient;
+//    private final RestStatClient statClient;
 
     @GetMapping
     public List<EventShortDto> publicGetAllEvents(@RequestParam(required = false) String text,
@@ -54,7 +52,7 @@ public class PublicEventController {
                 .build();
         log.info("Публичный запрос на поиск событий по параметрам: {}", reqParam);
         List<EventShortDto> events = eventService.getAllEvents(reqParam);
-        hit(request);
+//        hit(request);
         return events;
     }
 
@@ -62,16 +60,16 @@ public class PublicEventController {
     public EventFullDto publicGetEvent(@PathVariable long id,
                                        HttpServletRequest request) {
         EventFullDto eventFullDto = eventService.publicGetEvent(id);
-        hit(request);
+//        hit(request);
         return eventFullDto;
     }
 
-    private void hit(HttpServletRequest request) {
-        ParamHitDto endpointHitDto = new ParamHitDto();
-        endpointHitDto.setApp(mainServiceAppName);
-        endpointHitDto.setUri(request.getRequestURI());
-        endpointHitDto.setIp(request.getRemoteAddr());
-        endpointHitDto.setTimestamp(LocalDateTime.now());
-        statClient.hit(endpointHitDto);
-    }
+//    private void hit(HttpServletRequest request) {
+//        ParamHitDto endpointHitDto = new ParamHitDto();
+//        endpointHitDto.setApp(mainServiceAppName);
+//        endpointHitDto.setUri(request.getRequestURI());
+//        endpointHitDto.setIp(request.getRemoteAddr());
+//        endpointHitDto.setTimestamp(LocalDateTime.now());
+//        statClient.hit(endpointHitDto);
+//    }
 }

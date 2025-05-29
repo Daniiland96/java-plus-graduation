@@ -1,7 +1,5 @@
 package ewm.event.service;
 
-import ewm.ParamDto;
-import ewm.client.RestStatClient;
 import ewm.comment.repository.CommentRepository;
 import ewm.dto.category.CategoryDto;
 import ewm.dto.event.EventFullDto;
@@ -46,7 +44,7 @@ import static ewm.utility.Constants.FORMAT_DATETIME;
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
-    private final RestStatClient statClient;
+    //    private final RestStatClient statClient;
     private final UserFeign userFeign;
     private final CategoryFeign categoryFeign;
     private final LocationRepository locationRepository;
@@ -312,10 +310,10 @@ public class EventServiceImpl implements EventService {
                 }
             }
         }
-        ParamDto paramDto = new ParamDto(earlyPublishDate, LocalDateTime.now(), gettingUris, true);
-        statClient.getStat(paramDto)
-                .stream()
-                .peek(viewStats -> eventDtoMap.get(viewStats.getUri()).setViews(viewStats.getHits()));
+//        ParamDto paramDto = new ParamDto(earlyPublishDate, LocalDateTime.now(), gettingUris, true);
+//        statClient.getStat(paramDto)
+//                .stream()
+//                .peek(viewStats -> eventDtoMap.get(viewStats.getUri()).setViews(viewStats.getHits()));
         return eventDtoMap.values().stream().toList();
     }
 
@@ -326,9 +324,9 @@ public class EventServiceImpl implements EventService {
             publishDate = LocalDateTime.parse(dto.getPublishedOn(),
                     DateTimeFormatter.ofPattern(FORMAT_DATETIME));
         }
-        ParamDto paramDto = new ParamDto(publishDate, LocalDateTime.now(), Collections.singletonList(uri), true);
-        Long views = (long) statClient.getStat(paramDto).size();
-        dto.setViews(views);
+//        ParamDto paramDto = new ParamDto(publishDate, LocalDateTime.now(), Collections.singletonList(uri), true);
+//        Long views = (long) statClient.getStat(paramDto).size();
+//        dto.setViews(views);
         return dto;
     }
 
