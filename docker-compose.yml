@@ -47,6 +47,7 @@ services:
       CREATE DATABASE ewm_category;
       CREATE DATABASE ewm_user;
       CREATE DATABASE ewm_request;
+      CREATE DATABASE ewm_analyzer;
       EOSQL
       '
 
