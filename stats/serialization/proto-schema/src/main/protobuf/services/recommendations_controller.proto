@@ -7,11 +7,11 @@ option java_package = "ru.practicum.ewm.stats.services";
 
 service RecommendationsController {
   rpc GetRecommendationsForUser (UserPredictionsRequestProto)
-      returns (RecommendedEventProto);
+      returns (stream RecommendedEventProto);
 
   rpc GetSimilarEvents (SimilarEventsRequestProto)
-      returns (RecommendedEventProto);
+      returns (stream RecommendedEventProto);
 
   rpc GetInteractionsCount(InteractionsCountRequestProto)
-      returns (RecommendedEventProto);
+      returns (stream RecommendedEventProto);
 }

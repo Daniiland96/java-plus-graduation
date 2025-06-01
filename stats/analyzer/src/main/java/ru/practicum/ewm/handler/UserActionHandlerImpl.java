@@ -3,6 +3,8 @@ package ru.practicum.ewm.handler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import ru.practicum.ewm.mapper.UserActionMapper;
+import ru.practicum.ewm.model.UserAction;
 import ru.practicum.ewm.repository.UserActionRepository;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 
@@ -11,27 +13,28 @@ import ru.practicum.ewm.stats.avro.UserActionAvro;
 @RequiredArgsConstructor
 public class UserActionHandlerImpl implements UserActionHandler {
 
-    private final UserActionRepository userActionRepository;
+    private final UserActionRepository actionRepository;
+    private final UserActionMapper actionMapper;
 
     @Override
     public void handleUserAction(UserActionAvro avro) {
-        Long eventId = action.getEventId();
-        Long userId = action.getUserId();
-        Float newActionMark = switch (action.getActionType()) {
-            case LIKE -> like;
-            case REGISTER -> register;
-            case VIEW -> view;
-        };
+        UserAction action = actionMapper.mapToUserAction(avro);
 
-        if (!userActionRepository.existsByEventIdAndUserId(eventId, userId)) {
-            userActionRepository.save(UserActionMapper.mapToUserAction(action));
+        if (!actionRepository.existsByEventIdAndUserId(action.getEventId(), action.getUserId())) {
+            action = actionRepository.save(action);
+            log.info("Сохраняем новое действие: {}", action);
         } else {
-            UserAction userAction = userActionRepository.findByEventIdAndUserId(eventId, userId);
-            if (userAction.getMark() < newActionMark) {
-                userAction.setMark(newActionMark);
-                userAction.setTimestamp(action.getTimestamp());
+            UserAction oldAction = actionRepository
+                    .findByEventIdAndUserId(action.getEventId(), action.getUserId()).get();
+            log.info("Находим в БД старое действие: {}", oldAction);
+            if (action.getWeight() > oldAction.getWeight()) {
+                oldAction.setWeight(action.getWeight());
+                oldAction.setTimestamp(action.getTimestamp());
+                oldAction = actionRepository.save(oldAction);
+                log.info("Вес действия увеличился, обновляем в БД: {}", oldAction);
+            } else {
+                log.info("Вес действия не увеличился, обновлять не нужно");
             }
         }
     }
-}
 }

@@ -25,7 +25,7 @@ spring:
 analyzer:
   kafka:
     consumer:
-      user_action:
+      user-action:
         properties:
           client.id: analyzerUserActionConsumer
           group.id: analyzer-user-action
@@ -33,7 +33,7 @@ analyzer:
           key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
           value.deserializer: ru.practicum.ewm.deserializer.UserActionAvroDeserializer
           enable.auto.commit: false
-      event_similarity:
+      event-similarity:
         properties:
           client.id: analyzerEventSimilarityConsumer
           group.id: analyzer-event-similarity

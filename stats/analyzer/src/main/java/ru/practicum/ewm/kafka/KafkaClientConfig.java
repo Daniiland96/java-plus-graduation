@@ -16,14 +16,14 @@ import java.util.Properties;
 public class KafkaClientConfig {
 
     @Bean
-    @ConfigurationProperties(prefix = "analyzer.kafka.consumer.user_action.properties")
+    @ConfigurationProperties(prefix = "analyzer.kafka.consumer.user-action.properties")
     public Properties getKafkaConsumerUserActionProperties() {
         log.info("{}: Создание Properties для UserAction", KafkaClientConfig.class.getSimpleName());
         return new Properties();
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "analyzer.kafka.consumer.event_similarity.properties")
+    @ConfigurationProperties(prefix = "analyzer.kafka.consumer.event-similarity.properties")
     public Properties getKafkaConsumerEventSimilarityProperties() {
         log.info("{}: Создание Properties для EventSimilarity", KafkaClientConfig.class.getSimpleName());
         return new Properties();

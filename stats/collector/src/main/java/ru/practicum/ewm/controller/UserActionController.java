@@ -14,7 +14,7 @@ import ru.practicum.ewm.stats.services.UserActionControllerGrpc;
 @Slf4j
 @GrpcService
 @RequiredArgsConstructor
-public class UserActionGrpcService extends UserActionControllerGrpc.UserActionControllerImplBase {
+public class UserActionController extends UserActionControllerGrpc.UserActionControllerImplBase {
     private final CollectorService collectorService;
 
     @Override
