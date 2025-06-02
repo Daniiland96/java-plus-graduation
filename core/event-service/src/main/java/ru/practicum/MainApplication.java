@@ -6,8 +6,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-//@EnableDiscoveryClient
-//@ConfigurationPropertiesScan
 @EnableFeignClients
 public class MainApplication {
     public static void main(String[] args) {
