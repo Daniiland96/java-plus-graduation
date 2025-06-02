@@ -4,15 +4,16 @@ server:
 grpc:
   client:
     analyzer:
-      address: "discovery:///analyzer"
+      address: 'discovery:///analyzer'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-      negotiationType: PLAINTEXT
+      negotiationType: plaintext
+
     collector:
-      address: "discovery:///collector"
+      address: 'discovery:///collector'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
-      negotiationType: PLAINTEXT
+      negotiationType: plaintext
 
 spring:
   output:
